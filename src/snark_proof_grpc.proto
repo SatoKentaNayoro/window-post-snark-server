@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package snark_proof_grpc;
+
+message SnarkTaskRequestParams {
+  string task_id = 1;
+  bytes vanilla_proof = 2;
+  bytes pub_in = 3;
+  bytes post_config = 4;
+  uint32 replicas_len = 5;
+}
+
+message GetWorkerStatusRequest {
+  string task_id = 1;
+}
+
+message GetTaskResultRequest {
+  string task_id = 1;
+}
+
+message UnlockServerRequest {
+  string task_id = 1;
+}
+
+message GetTaskResultResponse {
+  string msg = 1;
+  bytes result = 2;
+}
+
+message WorkerStatus {
+  string status = 1;
+}
+
+message BaseResponse {
+  string  msg = 1;
+}
+
+service SnarkTaskService {
+  rpc DoSnarkTask(SnarkTaskRequestParams) returns (BaseResponse) {};
+  rpc CanDoSnarkTask(GetWorkerStatusRequest) returns (BaseResponse) {};
+  rpc GetSnarkTaskResult(GetTaskResultRequest) returns (GetTaskResultResponse) {};
+  rpc UnlockServer(UnlockServerRequest) returns (BaseResponse) {};
+}
