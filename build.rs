@@ -7,3 +7,4 @@ fn main() {
         .compile(&["src/snark_proof_grpc.proto"], &["src"])
         .unwrap();
 }
+
