@@ -1,8 +1,10 @@
 mod utils;
 
-use clap::{crate_version, App, Arg};
+use anyhow::{ensure, Result};
+use clap::{App, Arg};
+use log::{error, info, warn};
 use std::env;
-use std::process::exit;
+use std::{process, process::exit};
 
 fn main() {
     utils::set_commit_env();
@@ -31,15 +33,15 @@ fn main() {
             }
         }
         Some("stop") => {
-            let stop_matched = cmd_matches.subcommand_matches("stop").unwrap();
+            let stop_matched = matches.subcommand_matches("stop").unwrap();
             let pid = stop_matched.value_of("pid").unwrap().to_string();
-            stop(pid)
+            stop(pid);
         }
         _ => {
             c.print_help().unwrap();
             exit(1)
         }
-    };
+    }
 }
 
 fn run_cmd() -> App<'static, 'static> {
@@ -60,12 +62,40 @@ fn stop_cmd() -> App<'static, 'static> {
     )
 }
 
-
 #[tokio::main]
-async fn run(port: String,is_force: bool) {
+async fn run(port: String, is_force: bool) {
+    assert_eq!(can_run(is_force), true)
+}
 
+fn can_run(is_force: bool) -> bool {
+    if !is_force {
+        if utils::is_file_lock_exist() {
+            warn!("file lock existed,will check process is_running by pid");
+            if let Some(p) = utils::check_process_is_running_by_pid() {
+                error!("process double run, old process still running, pid: {}", p);
+                false
+            } else {
+                warn!("old process is not running, let's go on");
+                true
+            }
+        } else {
+            let pid = &process::id().to_string().as_bytes().to_vec();
+            match utils::write_pid_into_file_lock(pid) {
+                Ok(_) => {
+                    info!("write pid into lock file success");
+                    true
+                }
+                Err(e) => {
+                    error!("write pid into lock file failed with error:{}", e);
+                    false
+                }
+            }
+        }
+    } else {
+        true
+    }
 }
 
 fn stop(p: String) {
-
+    println!("{}", p)
 }
