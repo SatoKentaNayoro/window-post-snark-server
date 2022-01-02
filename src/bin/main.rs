@@ -1,10 +1,11 @@
-mod utils;
-
 use anyhow::{ensure, Result};
 use clap::{App, Arg};
 use log::{error, info, warn};
 use std::env;
 use std::{process, process::exit};
+use tokio::sync::{mpsc, oneshot};
+use window_post_server::utils;
+
 
 fn main() {
     utils::set_commit_env();
@@ -64,7 +65,12 @@ fn stop_cmd() -> App<'static, 'static> {
 
 #[tokio::main]
 async fn run(port: String, is_force: bool) {
-    assert_eq!(can_run(is_force), true)
+    assert_eq!(can_run(is_force), true);
+
+    // listening server exit signal
+    let (server_exit_tx, server_exit_rx) = oneshot::channel::<String>();
+    // listening task runner exit signal
+    let (task_exit_tx, task_exit_rx) = oneshot::channel::<String>();
 }
 
 fn can_run(is_force: bool) -> bool {
