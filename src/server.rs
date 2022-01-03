@@ -7,7 +7,7 @@ use crate::snark_proof_grpc::{
 use crate::status::{ServerStatus, TaskStatus};
 use crate::tasks;
 use crate::tasks::TaskInfo;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc::UnboundedSender;
 use tonic::{Request, Response, Status};
@@ -134,6 +134,36 @@ impl WindowPostServer {
             ))
         }
     }
+
+    fn unlock(&self, task_id: String) -> Result<(), Status> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(Status::aborted(e.to_string()));
+            }
+        };
+        if si.status == ServerStatus::Free {
+            Err(Status::cancelled("server is already Free"))
+        } else {
+            if si.status == ServerStatus::Locked {
+                if task_id == si.task_info.task_id {
+                    si.status = ServerStatus::default();
+                    si.task_info = TaskInfo::default();
+                    si.last_update_time = Instant::now();
+                    Ok(())
+                } else {
+                    Err(Status::invalid_argument(format!(
+                        "can not be unlocked by another task ,which is locked by task_id:{},but {}",
+                        si.task_info.task_id, task_id
+                    )))
+                }
+            } else {
+                Err(Status::cancelled(
+                    "this operation just used to unlock a server in status Locked",
+                ))
+            }
+        }
+    }
 }
 
 const SERVER_LOCK_TIME_OUT: Duration = Duration::from_secs(10);
@@ -175,6 +205,11 @@ impl SnarkTaskService for WindowPostServer {
         &self,
         request: Request<UnlockServerRequest>,
     ) -> Result<Response<BaseResponse>, Status> {
-        todo!()
+        match self.unlock(request.into_inner().task_id) {
+            Ok(_) => Ok(Response::new(BaseResponse {
+                msg: "ok".to_string(),
+            })),
+            Err(e) => Err(e),
+        }
     }
 }
