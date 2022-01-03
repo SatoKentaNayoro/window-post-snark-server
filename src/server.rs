@@ -6,7 +6,7 @@ use crate::snark_proof_grpc::{
 };
 use crate::status::{ServerStatus, TaskStatus};
 use crate::tasks;
-use crate::tasks::TaskInfo;
+use crate::tasks::{set_task_info, TaskInfo};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc::UnboundedSender;
@@ -41,6 +41,44 @@ impl WindowPostServer {
         WindowPostServer {
             server_info: Arc::new(Mutex::new(ServerInfo::default())),
             task_run_tx,
+        }
+    }
+
+    fn do_task(&self, task_params: &SnarkTaskRequestParams) -> Result<(), Status> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(Status::aborted(e.to_string()));
+            }
+        };
+        // Determine whether the request to execute the task came from the locked task
+        let task_id = task_params.task_id.clone();
+        if si.status == ServerStatus::Locked && si.task_info.task_id == task_id {
+            // set task info
+            let task_info = set_task_info(task_params);
+            // set server info
+            si.task_info = task_info;
+            si.status = ServerStatus::Working;
+            si.last_update_time = Instant::now();
+            match self.task_run_tx.send("ok".to_string()) {
+                Ok(_) => Ok(()),
+                Err(s) => Err(Status::cancelled(s.0)),
+            }
+        } else {
+            match si.status {
+                ServerStatus::Locked => Err(Status::cancelled(
+                    "server was locked by another task, can not be used now",
+                )),
+                ServerStatus::Free => Err(Status::cancelled(
+                    "server should be locked until task is executed",
+                )),
+                ServerStatus::Working => Err(Status::cancelled(
+                    "server is working on another task, can not be used now",
+                )),
+                ServerStatus::Unknown => {
+                    Err(Status::cancelled("server is Unknown, can not be used now"))
+                }
+            }
         }
     }
 
@@ -175,7 +213,16 @@ impl SnarkTaskService for WindowPostServer {
         &self,
         request: Request<SnarkTaskRequestParams>,
     ) -> Result<Response<BaseResponse>, Status> {
-        todo!()
+        // get all params
+        let params_all = request.get_ref();
+        match self.do_task(params_all) {
+            Ok(_) => Ok({
+                Response::new(BaseResponse {
+                    msg: "ok".to_string(),
+                })
+            }),
+            Err(e) => Err(e),
+        }
     }
 
     async fn lock_server_if_free(
