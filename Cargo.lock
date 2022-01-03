@@ -1130,6 +1130,7 @@ dependencies = [
  "dirs",
  "fil_logger",
  "log",
+ "prost",
  "strum",
  "strum_macros",
  "tokio",
