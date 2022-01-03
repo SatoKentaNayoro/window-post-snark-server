@@ -16,6 +16,8 @@ log = "0.4.7"
 dirs = "2.0.2"
 strum = "0.23"
 strum_macros = "0.23"
+bellperson = "0.18.0"
+thiserror = "1.0.6"
 
 [build-dependencies]
 tonic-build = "0.5"

@@ -1,3 +1,4 @@
+use crate::error;
 use crate::snark_proof_grpc::snark_task_service_server::SnarkTaskService;
 use crate::snark_proof_grpc::{
     BaseResponse, GetTaskResultRequest, GetTaskResultResponse, GetWorkerStatusRequest,
@@ -42,6 +43,97 @@ impl WindowPostServer {
             task_run_tx,
         }
     }
+
+    fn lock_server_if_free(&self, task_id: String) -> Result<ServerStatus, Status> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => return Err(Status::aborted(e.to_string())),
+        };
+        match si.status {
+            ServerStatus::Free => {
+                si.task_info = TaskInfo::default();
+                // server will be locked by client with task_id here at first
+                si.status = ServerStatus::Locked;
+                si.task_info.task_id = task_id.clone();
+                si.last_update_time = Instant::now();
+                Ok(ServerStatus::Free)
+            }
+            ServerStatus::Locked => {
+                // if locked too long and still not received task from miner, unlock it
+                if Instant::now().duration_since(si.last_update_time) > SERVER_LOCK_TIME_OUT {
+                    si.task_info = TaskInfo::default();
+                    si.status = ServerStatus::Locked;
+                    si.task_info.task_id = task_id.clone();
+                    si.last_update_time = Instant::now();
+                    Ok(ServerStatus::Free)
+                } else {
+                    Ok(ServerStatus::Locked)
+                }
+            }
+            ServerStatus::Working => {
+                // if miner do not get result back in 10min after task done or failed, drop task
+                if (si.task_info.task_status == TaskStatus::Done
+                    && Instant::now().duration_since(si.last_update_time)
+                        >= SERVER_TASK_GET_BACK_TIME_OUT)
+                    || (si.task_info.task_status == TaskStatus::Failed
+                        && Instant::now().duration_since(si.last_update_time)
+                            >= SERVER_TASK_GET_BACK_TIME_OUT)
+                {
+                    si.task_info = TaskInfo::default();
+                    si.status = ServerStatus::Locked;
+                    si.task_info.task_id = task_id.clone();
+                    si.last_update_time = Instant::now();
+                    Ok(ServerStatus::Free)
+                } else {
+                    Ok(ServerStatus::Working)
+                }
+            }
+            ServerStatus::Unknown => Ok(ServerStatus::Unknown),
+        }
+    }
+
+    fn get_task_result(&self, task_id: String) -> Result<Vec<u8>, Status> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(Status::aborted(e.to_string()));
+            }
+        };
+
+        if si.status == ServerStatus::Working {
+            if task_id != si.task_info.task_id {
+                Err(Status::invalid_argument(
+                    anyhow::Error::from(error::Error::InvalidParameters(format!(
+                        "current working task id is:{},but:{}",
+                        si.task_info.task_id, task_id
+                    )))
+                    .to_string(),
+                ))
+            } else {
+                if si.task_info.task_status == TaskStatus::Done {
+                    si.status = ServerStatus::Free;
+                    si.last_update_time = Instant::now();
+                    si.task_info.task_status = TaskStatus::Returned;
+                    Ok(si.task_info.result.clone())
+                } else if si.task_info.task_status == TaskStatus::Failed {
+                    si.status = ServerStatus::Free;
+                    si.last_update_time = Instant::now();
+                    Err(Status::aborted(
+                        anyhow::Error::from(error::Error::TaskFailedWithError(si.error.clone()))
+                            .to_string(),
+                    ))
+                } else {
+                    Err(Status::aborted(
+                        anyhow::Error::from(error::Error::TaskStillRunning).to_string(),
+                    ))
+                }
+            }
+        } else {
+            Err(Status::cancelled(
+                anyhow::Error::from(error::Error::NoTaskRunningOnSever).to_string(),
+            ))
+        }
+    }
 }
 
 const SERVER_LOCK_TIME_OUT: Duration = Duration::from_secs(10);
@@ -60,63 +152,9 @@ impl SnarkTaskService for WindowPostServer {
         &self,
         request: Request<GetWorkerStatusRequest>,
     ) -> Result<Response<BaseResponse>, Status> {
-        let mut si = match self.server_info.lock() {
-            Ok(s) => s,
-            Err(e) => return Err(Status::aborted(e.to_string())),
-        };
-        let ref req = request.into_inner();
-        match si.status {
-            ServerStatus::Free => {
-                si.task_info = TaskInfo::default();
-                // server will be locked by client with task_id here at first
-                si.status = ServerStatus::Locked;
-                si.task_info.task_id = req.task_id.clone();
-                si.last_update_time = Instant::now();
-                Ok(Response::new(BaseResponse {
-                    msg: ServerStatus::Free.to_string(),
-                }))
-            }
-            ServerStatus::Locked => {
-                // if locked too long and still not received task from miner, unlock it
-                if Instant::now().duration_since(si.last_update_time) > SERVER_LOCK_TIME_OUT {
-                    si.task_info = TaskInfo::default();
-                    si.status = ServerStatus::Locked;
-                    si.task_info.task_id = req.task_id.clone();
-                    si.last_update_time = Instant::now();
-                    Ok(Response::new(BaseResponse {
-                        msg: ServerStatus::Free.to_string(),
-                    }))
-                } else {
-                    Ok(Response::new(BaseResponse {
-                        msg: ServerStatus::Locked.to_string(),
-                    }))
-                }
-            }
-            ServerStatus::Working => {
-                // if miner do not get result back in 10min after task done or failed, drop task
-                if (si.task_info.task_status == TaskStatus::Done
-                    && Instant::now().duration_since(si.last_update_time)
-                        >= SERVER_TASK_GET_BACK_TIME_OUT)
-                    || (si.task_info.task_status == TaskStatus::Failed
-                        && Instant::now().duration_since(si.last_update_time)
-                            >= SERVER_TASK_GET_BACK_TIME_OUT)
-                {
-                    si.task_info = TaskInfo::default();
-                    si.status = ServerStatus::Locked;
-                    si.task_info.task_id = req.task_id.clone();
-                    si.last_update_time = Instant::now();
-                    Ok(Response::new(BaseResponse {
-                        msg: ServerStatus::Free.to_string(),
-                    }))
-                } else {
-                    Ok(Response::new(BaseResponse {
-                        msg: ServerStatus::Working.to_string(),
-                    }))
-                }
-            }
-            ServerStatus::Unknown => Ok(Response::new(BaseResponse {
-                msg: ServerStatus::Unknown.to_string(),
-            })),
+        match self.lock_server_if_free(request.into_inner().task_id) {
+            Ok(s) => Ok(Response::new(BaseResponse { msg: s.to_string() })),
+            Err(e) => Err(e),
         }
     }
 
@@ -124,7 +162,13 @@ impl SnarkTaskService for WindowPostServer {
         &self,
         request: Request<GetTaskResultRequest>,
     ) -> Result<Response<GetTaskResultResponse>, Status> {
-        todo!()
+        match self.get_task_result(request.into_inner().task_id) {
+            Ok(v) => Ok(Response::new(GetTaskResultResponse {
+                msg: "ok".to_string(),
+                result: v,
+            })),
+            Err(e) => Err(e),
+        }
     }
 
     async fn unlock_server(
