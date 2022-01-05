@@ -1,4 +1,4 @@
-use windowPost_snark_server::status::{ServerStatus,TaskStatus};
+use windowPost_snark_server::status::{ServerStatus, TaskStatus};
 
 #[test]
 fn test_enum() {

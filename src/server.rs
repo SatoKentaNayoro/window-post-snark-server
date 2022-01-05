@@ -1,5 +1,7 @@
 use crate::error;
-use crate::snark_proof_grpc::snark_task_service_server::SnarkTaskService;
+use crate::snark_proof_grpc::snark_task_service_server::{
+    SnarkTaskService, SnarkTaskServiceServer,
+};
 use crate::snark_proof_grpc::{
     BaseResponse, GetTaskResultRequest, GetTaskResultResponse, GetWorkerStatusRequest,
     SnarkTaskRequestParams, UnlockServerRequest,
@@ -7,12 +9,17 @@ use crate::snark_proof_grpc::{
 use crate::status::{ServerStatus, TaskStatus};
 use crate::tasks;
 use crate::tasks::{set_task_info, TaskInfo};
+use futures::FutureExt;
+use log::info;
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::oneshot;
+use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 
-pub struct WindowPostServer {
+pub struct WindowPostSnarkServer {
     pub server_info: Arc<Mutex<ServerInfo>>,
     task_run_tx: UnboundedSender<String>,
 }
@@ -36,9 +43,9 @@ impl Default for ServerInfo {
     }
 }
 
-impl WindowPostServer {
+impl WindowPostSnarkServer {
     pub fn default(task_run_tx: UnboundedSender<String>) -> Self {
-        WindowPostServer {
+        WindowPostSnarkServer {
             server_info: Arc::new(Mutex::new(ServerInfo::default())),
             task_run_tx,
         }
@@ -208,7 +215,7 @@ const SERVER_LOCK_TIME_OUT: Duration = Duration::from_secs(10);
 const SERVER_TASK_GET_BACK_TIME_OUT: Duration = Duration::from_secs(60);
 
 #[tonic::async_trait]
-impl SnarkTaskService for WindowPostServer {
+impl SnarkTaskService for WindowPostSnarkServer {
     async fn do_snark_task(
         &self,
         request: Request<SnarkTaskRequestParams>,
@@ -259,4 +266,22 @@ impl SnarkTaskService for WindowPostServer {
             Err(e) => Err(e),
         }
     }
+}
+
+pub async fn run_server(
+    srv_exit_rx: oneshot::Receiver<String>,
+    srv: WindowPostSnarkServer,
+    port: String,
+) {
+    let mut addr_s = "0.0.0.0:".to_string();
+    addr_s += &port;
+    let addr = addr_s.parse::<SocketAddr>().unwrap();
+    info!("Server listening on {}", addr);
+    Server::builder()
+        .accept_http1(true)
+        .add_service(SnarkTaskServiceServer::new(srv))
+        .serve_with_shutdown(addr, srv_exit_rx.map(drop))
+        .await
+        .unwrap();
+    info!("server stop listen")
 }
