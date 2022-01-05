@@ -67,8 +67,8 @@ fn stop_cmd() -> App<'static, 'static> {
     )
 }
 
-#[tokio::main]
-async fn run(port: String, is_force: bool) {
+
+fn run(port: String, is_force: bool) {
     assert_eq!(can_run(is_force), true);
     let rt = tokio::runtime::Runtime::new().with_context(|| "failed to build new runtime").unwrap();
     // listening server exit signal
@@ -98,12 +98,16 @@ async fn run(port: String, is_force: bool) {
     };
 
     // wait task stop
-    match task_handle.await {
-        Ok(_) => {}
-        Err(e) => {
-            error!("{}",e)
+    rt.block_on(
+        async {
+            match task_handle.await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("{}",e)
+                }
+            }
         }
-    };
+    );
 
     // send sig to stop server
     match server_exit_tx.send("exit".to_string()) {
@@ -115,12 +119,16 @@ async fn run(port: String, is_force: bool) {
     };
 
     // wait server exit
-    match sv_handle.await {
-        Ok(_) => {}
-        Err(e) => {
-            error!("{}",e)
+    rt.block_on(
+        async {
+            match sv_handle.await {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("{}",e)
+                }
+            }
         }
-    };
+    );
 
     // del file lock
     utils::del_file_lock();

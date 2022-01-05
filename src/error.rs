@@ -15,6 +15,8 @@ pub enum Error {
     TaskStillRunning,
     #[error("task failed with error: {}", _0)]
     TaskFailedWithError(String),
+    #[error("new client failed with error: {}", _0)]
+    NewClientFailed(String),
 }
 
 impl From<Box<dyn Any + Send>> for Error {
