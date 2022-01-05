@@ -1,17 +1,11 @@
+use filecoin_proofs::{PoStConfig, PoStType, SectorSize};
 use crate::api_version::ApiVersion;
 use crate::snark_proof_grpc::SnarkTaskRequestParams;
 use crate::status::TaskStatus;
 use serde::{Deserialize, Serialize};
+use storage_proofs_core::api_version::ApiVersion;
 use storage_proofs_core::error::Result;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum PoStType {
-    Winning,
-    Window,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct SectorSize(pub u64);
 
 #[derive(Default, Debug, Clone)]
 pub struct TaskInfo {
@@ -22,17 +16,6 @@ pub struct TaskInfo {
     pub replicas_len: usize,
     pub result: Vec<u8>,
     pub task_status: TaskStatus,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PoStConfig {
-    pub sector_size: SectorSize,
-    pub challenge_count: usize,
-    pub sector_count: usize,
-    pub typ: PoStType,
-    /// High priority (always runs on GPU) == true
-    pub priority: bool,
-    pub api_version: ApiVersion,
 }
 
 pub fn set_task_info(snark_params: &SnarkTaskRequestParams) -> TaskInfo {
