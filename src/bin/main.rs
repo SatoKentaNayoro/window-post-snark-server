@@ -4,12 +4,12 @@ use log::{error, info, warn};
 use std::env;
 use std::{process, process::exit};
 use tokio::sync::{mpsc, oneshot};
-use window_post_server::utils;
+use windowPost_snark_server::utils;
 
 
 fn main() {
     utils::set_commit_env();
-    let cmds = App::new("window-post-server")
+    let cmds = App::new("windowPost-snark-server")
         .author(utils::author())
         .version(utils::version())
         .subcommands(vec![run_cmd(), stop_cmd()]);
@@ -46,7 +46,7 @@ fn main() {
 }
 
 fn run_cmd() -> App<'static, 'static> {
-    App::new("run").about("run window-post-server").args(&[
+    App::new("run").about("run windowPost-snark-server").args(&[
         Arg::from_usage("-d, --debug 'print debug log'").required(false),
         Arg::from_usage("-f, --force 'force run process without num limit'").required(false),
         Arg::from_usage("-p, --port=[PORT] 'specify server port'")
@@ -56,7 +56,7 @@ fn run_cmd() -> App<'static, 'static> {
 }
 
 fn stop_cmd() -> App<'static, 'static> {
-    App::new("stop").about("stop window-post-server").arg(
+    App::new("stop").about("stop windowPost-snark-server").arg(
         Arg::from_usage("-p, --pid=[PID] 'specify server pid'")
             .default_value("")
             .required(false),
