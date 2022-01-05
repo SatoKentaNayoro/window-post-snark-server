@@ -1,4 +1,4 @@
-use anyhow::{Context, ensure, Result};
+use anyhow::{Context};
 use clap::{App, Arg};
 use log::{error, info, warn};
 use std::env;
@@ -9,11 +9,11 @@ use std::time::Duration;
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::flag;
 use tokio::sync::{mpsc, oneshot};
-use windowPost_snark_server::{server, server::WindowPostSnarkServer, utils, tasks};
+use window_post_snark_server::{server, server::WindowPostSnarkServer, utils, tasks};
 
 fn main() {
     utils::set_commit_env();
-    let cmds = App::new("windowPost-snark-server")
+    let cmds = App::new("window-post-snark-server")
         .author(utils::author())
         .version(utils::version())
         .subcommands(vec![run_cmd(), stop_cmd()]);
@@ -50,7 +50,7 @@ fn main() {
 }
 
 fn run_cmd() -> App<'static, 'static> {
-    App::new("run").about("run windowPost-snark-server").args(&[
+    App::new("run").about("run window-post-snark-server").args(&[
         Arg::from_usage("-d, --debug 'print debug log'").required(false),
         Arg::from_usage("-f, --force 'force run process without num limit'").required(false),
         Arg::from_usage("-p, --port=[PORT] 'specify server port'")
@@ -60,7 +60,7 @@ fn run_cmd() -> App<'static, 'static> {
 }
 
 fn stop_cmd() -> App<'static, 'static> {
-    App::new("stop").about("stop windowPost-snark-server").arg(
+    App::new("stop").about("stop window-post-snark-server").arg(
         Arg::from_usage("-p, --pid=[PID] 'specify server pid'")
             .default_value("")
             .required(false),

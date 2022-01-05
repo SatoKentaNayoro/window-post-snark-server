@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use strum_macros::{Display, EnumString};
 
 #[derive(Debug, PartialEq, Clone, EnumString, Display)]

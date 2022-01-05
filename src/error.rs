@@ -2,8 +2,6 @@ use std::any::Any;
 
 pub use anyhow::Result;
 
-use bellperson::SynthesisError;
-
 /// Custom error types
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

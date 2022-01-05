@@ -3,16 +3,12 @@ use crate::snark_proof_grpc::SnarkTaskRequestParams;
 use crate::status::TaskStatus;
 use filecoin_proofs::caches::get_post_params;
 use filecoin_proofs::parameters::window_post_setup_params;
-use filecoin_proofs::{
-    get_partitions_for_window_post, with_shape, PoStConfig, PoStType, SectorSize,
-};
+use filecoin_proofs::{get_partitions_for_window_post, with_shape, PoStConfig};
 use log::{error, info, warn};
-use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use storage_proofs_core::{
-    api_version::ApiVersion, compound_proof, compound_proof::CompoundProof, error::Result,
-    merkle::MerkleTreeTrait,
+    compound_proof, compound_proof::CompoundProof, error::Result, merkle::MerkleTreeTrait,
 };
 use storage_proofs_post::fallback::{FallbackPoSt, FallbackPoStCompound};
 use tokio::select;

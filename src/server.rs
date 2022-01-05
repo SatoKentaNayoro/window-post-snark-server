@@ -12,7 +12,7 @@ use crate::tasks::{set_task_info, TaskInfo};
 use futures::FutureExt;
 use log::info;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::oneshot;
