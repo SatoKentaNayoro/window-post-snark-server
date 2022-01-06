@@ -12,7 +12,7 @@ use uuid::Uuid;
 use window_post_snark_server::server;
 use window_post_snark_server::server::WindowPostSnarkServer;
 use window_post_snark_server::client;
-use window_post_snark_server::snark_proof_grpc::{GetWorkerStatusRequest, UnlockServerRequest};
+use window_post_snark_server::snark_proof_grpc::{GetTaskResultRequest, GetWorkerStatusRequest, UnlockServerRequest};
 
 async fn listen_exit_signal() {
     let term = Arc::new(AtomicBool::new(false));
@@ -54,6 +54,7 @@ fn test_run_server() -> Result<()> {
 
 #[test]
 fn test_lock_server_if_free() -> Result<()> {
+    fil_logger::init();
     let rt = Runtime::new().unwrap();
     let mut c = rt.block_on(client::new_client("http://127.0.0.1:50051", Duration::from_secs(10))).unwrap();
     let mut times = 1;
@@ -96,6 +97,7 @@ fn test_lock_server_if_free() -> Result<()> {
 
 #[test]
 fn test_unlock_server() -> Result<()> {
+    fil_logger::init();
     let rt = Runtime::new().unwrap();
     let mut c = rt.block_on(client::new_client("http://127.0.0.1:50051", Duration::from_secs(10))).unwrap();
     // let mut times = 1;
@@ -190,6 +192,25 @@ fn test_unlock_server() -> Result<()> {
             }
         }
     });
+
+    Ok(())
+}
+
+#[test]
+fn test_get_snark_task_result() -> Result<()> {
+    fil_logger::init();
+    let rt = Runtime::new().unwrap();
+    let mut c = rt.block_on(client::new_client("http://127.0.0.1:50051", Duration::from_secs(10))).unwrap();
+    let task_id = Uuid::new_v4().to_string();
+    let req = Request::new(GetTaskResultRequest{task_id});
+    rt.block_on(async {match c.get_snark_task_result(req).await {
+        Ok(res) => {
+            println!("{}", res.into_inner().msg)
+        }
+        Err(s) => {
+            println!("{}", s.message())
+        }
+    }});
 
     Ok(())
 }
