@@ -221,8 +221,8 @@ impl SnarkTaskService for WindowPostSnarkServer {
         request: Request<SnarkTaskRequestParams>,
     ) -> Result<Response<BaseResponse>, Status> {
         // get all params
-        let params_all = request.get_ref();
-        match self.do_task(params_all) {
+        let params_all = request.into_inner();
+        match self.do_task(&params_all) {
             Ok(_) => Ok({
                 Response::new(BaseResponse {
                     msg: "ok".to_string(),
