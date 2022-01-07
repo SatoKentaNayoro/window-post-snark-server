@@ -184,7 +184,7 @@ pub async fn run_task(
                     si.status = ServerStatus::Unknown;
                     si.last_update_time = Instant::now();
                     break;
-                },
+                }
             };
         }
     }
