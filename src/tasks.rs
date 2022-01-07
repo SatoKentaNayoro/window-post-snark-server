@@ -1,6 +1,6 @@
 use crate::server::ServerInfo;
 use crate::snark_proof_grpc::SnarkTaskRequestParams;
-use crate::status::TaskStatus;
+use crate::status::{ServerStatus, TaskStatus};
 use filecoin_proofs::caches::get_post_params;
 use filecoin_proofs::parameters::window_post_setup_params;
 use filecoin_proofs::{get_partitions_for_window_post, with_shape, PoStConfig};
@@ -133,7 +133,7 @@ pub async fn run_task(
         let exit_start_time = Instant::now();
         let (mut is_working_logged, mut is_done_logged) = (false, false);
         loop {
-            let si = match srv_info.lock() {
+            let mut si = match srv_info.lock() {
                 Ok(s) => s,
                 Err(e) => {
                     error!("{}", e);
@@ -143,10 +143,14 @@ pub async fn run_task(
             match si.task_info.task_status {
                 TaskStatus::None => {
                     info!("no task running, will exit immediately");
+                    si.status = ServerStatus::Unknown;
+                    si.last_update_time = Instant::now();
                     break;
                 }
                 TaskStatus::Ready => {
                     info!("task is ready but not start running, will exit immediately");
+                    si.status = ServerStatus::Unknown;
+                    si.last_update_time = Instant::now();
                     break;
                 }
                 TaskStatus::Working => {
@@ -159,6 +163,8 @@ pub async fn run_task(
                 TaskStatus::Done => {
                     if Instant::now().duration_since(exit_start_time) > Duration::from_secs(300) {
                         warn!("worker has wait 5minute,force exited");
+                        si.status = ServerStatus::Unknown;
+                        si.last_update_time = Instant::now();
                         break;
                     } else {
                         if !is_done_logged {
@@ -170,9 +176,15 @@ pub async fn run_task(
                 }
                 TaskStatus::Returned => {
                     info!("task result was returned,will exit immediately");
+                    si.status = ServerStatus::Unknown;
+                    si.last_update_time = Instant::now();
                     break;
                 }
-                TaskStatus::Failed => break,
+                TaskStatus::Failed => {
+                    si.status = ServerStatus::Unknown;
+                    si.last_update_time = Instant::now();
+                    break;
+                },
             };
         }
     }
