@@ -2388,6 +2388,7 @@ dependencies = [
  "fil_logger",
  "filecoin-proofs",
  "futures",
+ "lazy_static",
  "log",
  "prost",
  "semver",

@@ -30,6 +30,7 @@ semver = "0.11.0"
 signal-hook = "0.3.10"
 futures = "0.3"
 uuid = { version = "^0.8", features = ["serde", "v4"] }
+lazy_static = "1.2"
 
 [build-dependencies]
 tonic-build = "0.5"

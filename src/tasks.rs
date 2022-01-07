@@ -88,6 +88,7 @@ pub async fn run_task(
                                         info!("task {} done", si2.task_info.task_id);
                                         si2.task_info.result = r;
                                         si2.task_info.task_status = TaskStatus::Done;
+                                        si2.last_update_time = Instant::now();
                                     }
                                     Err(e) => {
                                         error!(
@@ -96,6 +97,7 @@ pub async fn run_task(
                                         );
                                         si2.task_info.task_status = TaskStatus::Failed;
                                         si2.error = e.to_string();
+                                        si2.last_update_time = Instant::now();
                                     }
                                 }
                                 drop(si2)
