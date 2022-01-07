@@ -417,7 +417,7 @@ fn do_window_post<Tree: 'static + MerkleTreeTrait>(
         prover_id,
     )?;
 
-   FallbackPoStCompound::
+   FallbackPoStCompound::prove_vanilla()
 
 
     let rt = Runtime::new().unwrap();

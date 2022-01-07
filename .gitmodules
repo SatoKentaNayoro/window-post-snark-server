@@ -1,0 +1,3 @@
+[submodule "dep/rust-file-proofs"]
+	path = dep/rust-file-proofs
+	url = git@github.com:hxuchen/rust-fil-proofs.git
