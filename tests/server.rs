@@ -13,6 +13,7 @@ use window_post_snark_server::server;
 use window_post_snark_server::server::WindowPostSnarkServer;
 use window_post_snark_server::client;
 use window_post_snark_server::snark_proof_grpc::{GetTaskResultRequest, GetWorkerStatusRequest, UnlockServerRequest};
+use window_post_snark_server::run;
 
 async fn listen_exit_signal() {
     let term = Arc::new(AtomicBool::new(false));
@@ -43,11 +44,21 @@ fn run_s() {
     rt.shutdown_background();
 }
 
+fn run_all() {
+    run::run("50051".to_string(),true)
+}
 
 #[test]
 fn test_run_server() -> Result<()> {
     fil_logger::init();
     run_s();
+    Ok(())
+}
+
+#[test]
+fn test_run_all() -> Result<()> {
+    fil_logger::init();
+    run_all();
     Ok(())
 }
 

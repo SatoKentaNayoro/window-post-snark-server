@@ -171,9 +171,7 @@ impl WindowPostSnarkServer {
                             .to_string(),
                     ))
                 } else {
-                    Err(Status::aborted(
-                        anyhow::Error::from(error::Error::TaskStillRunning).to_string(),
-                    ))
+                    Ok(vec![])
                 }
             }
         } else {
@@ -247,10 +245,19 @@ impl SnarkTaskService for WindowPostSnarkServer {
         request: Request<GetTaskResultRequest>,
     ) -> Result<Response<GetTaskResultResponse>, Status> {
         match self.get_task_result(request.into_inner().task_id) {
-            Ok(v) => Ok(Response::new(GetTaskResultResponse {
-                msg: "ok".to_string(),
-                result: v,
-            })),
+            Ok(v) => {
+                if v.len() > 0 {
+                    Ok(Response::new(GetTaskResultResponse {
+                        msg: "ok".to_string(),
+                        result: v,
+                    }))
+                } else {
+                    Ok(Response::new(GetTaskResultResponse {
+                        msg: TaskStatus::Working.to_string(),
+                        result: v,
+                    }))
+                }
+            }
             Err(e) => Err(e),
         }
     }
