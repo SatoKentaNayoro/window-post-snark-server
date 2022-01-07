@@ -19,6 +19,9 @@ use tokio::sync::oneshot;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 
+const SERVER_LOCK_TIME_OUT: Duration = Duration::from_secs(10);
+const SERVER_TASK_GET_BACK_TIME_OUT: Duration = Duration::from_secs(60);
+
 pub struct WindowPostSnarkServer {
     pub server_info: Arc<Mutex<ServerInfo>>,
     task_run_tx: UnboundedSender<String>,
@@ -116,7 +119,7 @@ impl WindowPostSnarkServer {
                 }
             }
             ServerStatus::Working => {
-                // if miner do not get result back in 10min after task done or failed, drop task
+                // if miner do not get result back in SERVER_TASK_GET_BACK_TIME_OUT after task done or failed, drop task
                 if (si.task_info.task_status == TaskStatus::Done
                     && Instant::now().duration_since(si.last_update_time)
                         >= SERVER_TASK_GET_BACK_TIME_OUT)
@@ -210,9 +213,6 @@ impl WindowPostSnarkServer {
         }
     }
 }
-
-const SERVER_LOCK_TIME_OUT: Duration = Duration::from_secs(10);
-const SERVER_TASK_GET_BACK_TIME_OUT: Duration = Duration::from_secs(60);
 
 #[tonic::async_trait]
 impl SnarkTaskService for WindowPostSnarkServer {
