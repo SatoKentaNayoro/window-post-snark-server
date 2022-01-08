@@ -17,7 +17,7 @@ use tonic::Request;
 use blstrs::Scalar as Fr;
 use ff::Field;
 use filecoin_proofs::parameters::window_post_setup_params;
-use log::info;
+use log::{error, info};
 use rand::{random, Rng, SeedableRng};
 use storage_proofs_core::compound_proof;
 use storage_proofs_core::compound_proof::CompoundProof;
@@ -512,42 +512,48 @@ fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
     let task_id = Uuid::new_v4();
 
     // lock server
-    let req_lock_server = Request::new(GetWorkerStatusRequest { task_id: task_id.clone().to_string() });
-    rt.block_on(async {
-        match client.lock_server_if_free(req_lock_server).await {
-            Ok(res) => {
-                println!("{}", res.into_inner().msg)
-            }
-            Err(s) => {
-                panic!("{}", s.message())
-            }
-        }
-    });
+    loop {
+        let req_lock_server = GetWorkerStatusRequest { task_id: task_id.clone().to_string() };
 
-    // do task
-    let req_do_task = Request::new(SnarkTaskRequestParams {
-        task_id: task_id.clone().to_string(),
-        vanilla_proof: serde_json::to_vec(&va_proof)?,
-        pub_in: serde_json::to_vec(&pub_inputs)?,
-        post_config: serde_json::to_vec(&post_config)?,
-        replicas_len: replicas.len() as u32,
-    });
-
-    rt.block_on(async {
-        match client.do_snark_task(req_do_task).await {
+        match rt.block_on(async { client.lock_server_if_free(Request::new(req_lock_server.clone())).await }) {
             Ok(r) => {
                 println!("{}", r.into_inner().msg)
             }
             Err(s) => {
-                panic!("{}", s.message())
+                error!("{}",s.message());
+                rt.block_on(async {
+                    tokio::time::sleep(Duration::from_secs(2)).await
+                });
+                continue
             }
         }
-    });
 
-    // get result
-    let req_get_result = GetTaskResultRequest { task_id: task_id.clone().to_string() };
-    let result = rt.block_on(
-        async {
+        // do task
+        let req_do_task = Request::new(SnarkTaskRequestParams {
+            task_id: task_id.clone().to_string(),
+            vanilla_proof: serde_json::to_vec(&va_proof)?,
+            pub_in: serde_json::to_vec(&pub_inputs)?,
+            post_config: serde_json::to_vec(&post_config)?,
+            replicas_len: replicas.len() as u32,
+        });
+
+        match rt.block_on(async { client.do_snark_task(req_do_task).await }) {
+            Ok(r) => {
+                println!("{}", r.into_inner().msg)
+            }
+            Err(s) => {
+                error!("{}", s.message());
+                rt.block_on(async {
+                    tokio::time::sleep(Duration::from_secs(2)).await
+                });
+                continue
+            }
+        }
+
+        // get result
+        let req_get_result = GetTaskResultRequest { task_id: task_id.clone().to_string() };
+
+        let result = match rt.block_on(async {
             loop {
                 match client.get_snark_task_result(Request::new(req_get_result.clone())).await {
                     Ok(res) => {
@@ -565,9 +571,16 @@ fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
                     }
                 }
             }
-        }
-    );
-    result
+        }) {
+            Ok(r) => {
+                Ok(r)
+            }
+            Err(s) => {
+                Err(s)
+            }
+        };
+        return result
+    };
 }
 
 
