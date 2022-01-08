@@ -21,6 +21,7 @@ use tonic::{Request, Response, Status};
 
 const SERVER_LOCK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(10);
 const SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(60);
+const SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT: Duration = Duration::from_secs(300);
 
 pub struct WindowPostSnarkServer {
     pub server_info: Arc<Mutex<ServerInfo>>,
@@ -34,6 +35,7 @@ pub struct ServerInfo {
     pub last_update_time: Instant,
     pub server_lock_time_out: Duration,
     pub server_task_get_back_time_out: Duration,
+    pub server_exit_time_out_after_task_done:Duration,
     pub error: String,
 }
 
@@ -45,6 +47,7 @@ impl Default for ServerInfo {
             last_update_time: Instant::now(),
             server_lock_time_out: SERVER_LOCK_TIME_OUT_DEFAULT,
             server_task_get_back_time_out: SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT,
+            server_exit_time_out_after_task_done: SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT,
             error: String::default(),
         }
     }
