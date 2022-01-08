@@ -19,8 +19,8 @@ use tokio::sync::oneshot;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 
-const SERVER_LOCK_TIME_OUT: Duration = Duration::from_secs(10);
-const SERVER_TASK_GET_BACK_TIME_OUT: Duration = Duration::from_secs(60);
+const SERVER_LOCK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(10);
+const SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(60);
 
 pub struct WindowPostSnarkServer {
     pub server_info: Arc<Mutex<ServerInfo>>,
@@ -32,6 +32,8 @@ pub struct ServerInfo {
     pub task_info: tasks::TaskInfo,
     pub status: ServerStatus,
     pub last_update_time: Instant,
+    pub server_lock_time_out: Duration,
+    pub server_task_get_back_time_out: Duration,
     pub error: String,
 }
 
@@ -41,6 +43,8 @@ impl Default for ServerInfo {
             task_info: tasks::TaskInfo::default(),
             status: ServerStatus::default(),
             last_update_time: Instant::now(),
+            server_lock_time_out: SERVER_LOCK_TIME_OUT_DEFAULT,
+            server_task_get_back_time_out: SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT,
             error: String::default(),
         }
     }
@@ -108,7 +112,7 @@ impl WindowPostSnarkServer {
             }
             ServerStatus::Locked => {
                 // if locked too long and still not received task from miner, unlock it
-                if Instant::now().duration_since(si.last_update_time) > SERVER_LOCK_TIME_OUT {
+                if Instant::now().duration_since(si.last_update_time) > si.server_lock_time_out {
                     si.task_info = TaskInfo::default();
                     si.status = ServerStatus::Locked;
                     si.task_info.task_id = task_id.clone();
@@ -122,10 +126,10 @@ impl WindowPostSnarkServer {
                 // if miner do not get result back in SERVER_TASK_GET_BACK_TIME_OUT after task done or failed, drop task
                 if (si.task_info.task_status == TaskStatus::Done
                     && Instant::now().duration_since(si.last_update_time)
-                        >= SERVER_TASK_GET_BACK_TIME_OUT)
+                        >= si.server_task_get_back_time_out)
                     || (si.task_info.task_status == TaskStatus::Failed
                         && Instant::now().duration_since(si.last_update_time)
-                            >= SERVER_TASK_GET_BACK_TIME_OUT)
+                            >= si.server_task_get_back_time_out)
                 {
                     si.task_info = TaskInfo::default();
                     si.status = ServerStatus::Locked;
