@@ -35,7 +35,7 @@ fn run_s() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let (run_task_tx, _) = mpsc::unbounded_channel::<String>();
     let (server_exit_tx, server_exit_rx) = oneshot::channel::<String>();
-    let sv = WindowPostSnarkServer::default(run_task_tx);
+    let sv = WindowPostSnarkServer::new(run_task_tx);
     let handle = rt.spawn(server::run_server(server_exit_rx, sv, "50051".to_string()));
 
     rt.block_on(listen_exit_signal());

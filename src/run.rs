@@ -22,7 +22,7 @@ pub fn run(port: String, is_force: bool) {
 
     let (run_task_tx, run_task_rx) = mpsc::unbounded_channel::<String>();
 
-    let sv = WindowPostSnarkServer::default(run_task_tx);
+    let sv = WindowPostSnarkServer::new(run_task_tx);
     let sv_i = sv.server_info.clone();
 
     let sv_handle = rt.spawn(server::run_server(server_exit_rx, sv, port));

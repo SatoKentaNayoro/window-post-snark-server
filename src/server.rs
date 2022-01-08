@@ -47,7 +47,7 @@ impl Default for ServerInfo {
 }
 
 impl WindowPostSnarkServer {
-    pub fn default(task_run_tx: UnboundedSender<String>) -> Self {
+    pub fn new(task_run_tx: UnboundedSender<String>) -> Self {
         WindowPostSnarkServer {
             server_info: Arc::new(Mutex::new(ServerInfo::default())),
             task_run_tx,
