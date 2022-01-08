@@ -2,7 +2,7 @@
 name = "window-post-snark-server"
 description = "Used to separate Snark Proof procedures in window-post of Filecoin."
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 repository = "https://github.com/hxuchen/window-post-snark-server.git"
 readme = "README.md"
 
