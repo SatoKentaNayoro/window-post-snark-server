@@ -63,7 +63,7 @@ fn stop_cmd() -> App<'static, 'static> {
 }
 
 
-fn stop(mut pid_s: String) {
+fn stop(pid_s: String) {
     let pid;
     if pid_s == String::default() {
         pid = utils::read_pid(utils::lock_file_path().to_str().unwrap().to_string());
