@@ -1,17 +1,15 @@
 use crate::server::WindowPostSnarkServer;
 use crate::{server, tasks, utils};
 use anyhow::Context;
-use log::{error, info, warn};
+use log::{error, info};
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::flag;
-use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{mpsc, oneshot};
 
-pub fn run(port: String, is_force: bool) {
-    assert_eq!(can_run(is_force), true);
+pub fn run(port: String) {
     let rt = tokio::runtime::Runtime::new()
         .with_context(|| "failed to build new runtime")
         .unwrap();
@@ -74,35 +72,6 @@ pub fn run(port: String, is_force: bool) {
     utils::del_file_lock();
     rt.shutdown_background();
     info!("server main process exited")
-}
-
-fn can_run(is_force: bool) -> bool {
-    if !is_force {
-        if utils::is_file_lock_exist() {
-            warn!("file lock existed,will check process is_running by pid");
-            if let Some(p) = utils::check_process_is_running_by_pid() {
-                error!("process double run, old process still running, pid: {}", p);
-                false
-            } else {
-                warn!("old process is not running, let's go on");
-                true
-            }
-        } else {
-            let pid = &process::id().to_string().as_bytes().to_vec();
-            match utils::write_pid_into_file_lock(pid) {
-                Ok(_) => {
-                    info!("write pid into lock file success");
-                    true
-                }
-                Err(e) => {
-                    error!("write pid into lock file failed with error:{}", e);
-                    false
-                }
-            }
-        }
-    } else {
-        true
-    }
 }
 
 async fn listen_exit_signal() {

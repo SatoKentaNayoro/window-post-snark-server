@@ -161,7 +161,9 @@ pub async fn run_task(
                     continue;
                 }
                 TaskStatus::Done => {
-                    if Instant::now().duration_since(exit_start_time) > si.server_exit_time_out_after_task_done {
+                    if Instant::now().duration_since(exit_start_time)
+                        > si.server_exit_time_out_after_task_done
+                    {
                         warn!("worker has wait 5minute,force exited");
                         si.status = ServerStatus::Unknown;
                         si.last_update_time = Instant::now();

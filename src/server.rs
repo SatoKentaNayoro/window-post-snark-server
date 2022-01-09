@@ -35,7 +35,7 @@ pub struct ServerInfo {
     pub last_update_time: Instant,
     pub server_lock_time_out: Duration,
     pub server_task_get_back_time_out: Duration,
-    pub server_exit_time_out_after_task_done:Duration,
+    pub server_exit_time_out_after_task_done: Duration,
     pub error: String,
 }
 
