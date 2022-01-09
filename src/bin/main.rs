@@ -2,7 +2,7 @@ use clap::{App, Arg};
 use std::{env, process};
 use std::process::exit;
 use log::{error, info, warn};
-use window_post_snark_server::{ utils};
+use window_post_snark_server::{utils};
 use window_post_snark_server::run::run;
 
 fn main() {
@@ -63,8 +63,14 @@ fn stop_cmd() -> App<'static, 'static> {
 }
 
 
-fn stop(p: String) {
-    println!("{}", p)
+fn stop(mut pid_s: String) {
+    let pid;
+    if pid_s == String::default() {
+        pid = utils::read_pid(utils::lock_file_path().to_str().unwrap().to_string());
+    } else {
+        pid = pid_s.parse::<u32>().unwrap()
+    }
+    process::Command::new("kill").arg(pid.to_string()).output().unwrap();
 }
 
 fn can_run(is_force: bool) -> bool {
