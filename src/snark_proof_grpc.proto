@@ -37,7 +37,7 @@ message BaseResponse {
 
 service SnarkTaskService {
   rpc DoSnarkTask(SnarkTaskRequestParams) returns (BaseResponse) {};
-  rpc CanDoSnarkTask(GetWorkerStatusRequest) returns (BaseResponse) {};
+  rpc LockServerIfFree(GetWorkerStatusRequest) returns (BaseResponse) {};
   rpc GetSnarkTaskResult(GetTaskResultRequest) returns (GetTaskResultResponse) {};
   rpc UnlockServer(UnlockServerRequest) returns (BaseResponse) {};
 }
