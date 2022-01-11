@@ -11,6 +11,6 @@ It's kind of distributed，and supports multiple Miners sharing a set of servers
 
 ## Design the interaction flow between server and client
 
-![](../../Downloads/WX20220111-131638@2x.png)
+![](./imgs/1.png)
 
-![](../../Downloads/WX20220111-131732@2x.png)
+![](./imgs/2.png)
