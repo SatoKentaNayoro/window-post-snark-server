@@ -45,7 +45,7 @@ fn run_s() {
 }
 
 fn run_all() {
-    run::run("50051".to_string())
+    run::run("50051".to_string(),Duration::from_secs(20),Duration::from_secs(100),Duration::from_secs(200))
 }
 
 #[test]

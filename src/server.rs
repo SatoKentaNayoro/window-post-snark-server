@@ -19,10 +19,11 @@ use tokio::sync::oneshot;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 
-const SERVER_LOCK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(10);
-const SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(60);
-const SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT: Duration = Duration::from_secs(300);
+pub const SERVER_LOCK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(10);
+pub const SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT: Duration = Duration::from_secs(60);
+pub const SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT: Duration = Duration::from_secs(300);
 
+#[derive(Debug)]
 pub struct WindowPostSnarkServer {
     pub server_info: Arc<Mutex<ServerInfo>>,
     task_run_tx: UnboundedSender<String>,
@@ -59,6 +60,60 @@ impl WindowPostSnarkServer {
             server_info: Arc::new(Mutex::new(ServerInfo::default())),
             task_run_tx,
         }
+    }
+
+    pub fn set_time_out(
+        &self,
+        server_lock_time_out: Duration,
+        server_task_get_back_time_out: Duration,
+        server_exit_time_out_after_task_done: Duration,
+    ) -> anyhow::Result<()> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(anyhow::Error::msg(e.to_string()));
+            }
+        };
+        si.server_lock_time_out = server_lock_time_out;
+        si.server_task_get_back_time_out = server_task_get_back_time_out;
+        si.server_exit_time_out_after_task_done = server_exit_time_out_after_task_done;
+        Ok(())
+    }
+
+    pub fn set_server_lock_time_out(&self, time_out: Duration) -> anyhow::Result<()> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(anyhow::Error::msg(e.to_string()));
+            }
+        };
+        si.server_lock_time_out = time_out;
+        Ok(())
+    }
+
+    pub fn set_server_task_get_back_time_out(&self, time_out: Duration) -> anyhow::Result<()> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(anyhow::Error::msg(e.to_string()));
+            }
+        };
+        si.server_task_get_back_time_out = time_out;
+        Ok(())
+    }
+
+    pub fn set_server_exit_time_out_after_task_done(
+        &self,
+        time_out: Duration,
+    ) -> anyhow::Result<()> {
+        let mut si = match self.server_info.lock() {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(anyhow::Error::msg(e.to_string()));
+            }
+        };
+        si.server_exit_time_out_after_task_done = time_out;
+        Ok(())
     }
 
     fn do_task(&self, task_params: &SnarkTaskRequestParams) -> Result<(), Status> {
