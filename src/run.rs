@@ -1,7 +1,10 @@
-use crate::server::WindowPostSnarkServer;
+use crate::server::{
+    WindowPostSnarkServer, SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT,
+    SERVER_LOCK_TIME_OUT_DEFAULT, SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT,
+};
 use crate::{server, tasks, utils};
 use anyhow::Context;
-use log::{error, info};
+use log::{debug, error, info};
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::flag;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,7 +12,12 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{mpsc, oneshot};
 
-pub fn run(port: String) {
+pub fn run(
+    port: String,
+    server_lock_time_out: Duration,
+    server_task_get_back_time_out: Duration,
+    server_exit_time_out_after_task_done: Duration,
+) {
     let rt = tokio::runtime::Runtime::new()
         .with_context(|| "failed to build new runtime")
         .unwrap();
@@ -21,6 +29,33 @@ pub fn run(port: String) {
     let (run_task_tx, run_task_rx) = mpsc::unbounded_channel::<String>();
 
     let sv = WindowPostSnarkServer::new(run_task_tx);
+
+    if server_lock_time_out != SERVER_LOCK_TIME_OUT_DEFAULT
+        && server_task_get_back_time_out != SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT
+        && server_exit_time_out_after_task_done != SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT
+    {
+        sv.set_time_out(
+            server_lock_time_out,
+            server_task_get_back_time_out,
+            server_exit_time_out_after_task_done,
+        )
+        .unwrap();
+    } else {
+        if server_lock_time_out != SERVER_LOCK_TIME_OUT_DEFAULT {
+            sv.set_server_lock_time_out(server_lock_time_out).unwrap();
+        }
+        if server_task_get_back_time_out != SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT {
+            sv.set_server_task_get_back_time_out(server_task_get_back_time_out)
+                .unwrap();
+        }
+        if server_exit_time_out_after_task_done != SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT {
+            sv.set_server_exit_time_out_after_task_done(server_exit_time_out_after_task_done)
+                .unwrap();
+        }
+    };
+
+    debug!("server_info:{:?}", sv.server_info);
+
     let sv_i = sv.server_info.clone();
 
     let sv_handle = rt.spawn(server::run_server(server_exit_rx, sv, port));

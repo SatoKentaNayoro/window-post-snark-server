@@ -4,6 +4,7 @@ use std::process::exit;
 use log::{error, info, warn};
 use window_post_snark_server::{utils};
 use window_post_snark_server::run::run;
+use window_post_snark_server::server::{SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT, SERVER_LOCK_TIME_OUT_DEFAULT, SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT};
 
 fn main() {
     utils::set_commit_env();
@@ -30,7 +31,7 @@ fn main() {
             } else {
                 assert_eq!(can_run(false), true);
             }
-            run(port)
+            run(port,SERVER_LOCK_TIME_OUT_DEFAULT,SERVER_TASK_GET_BACK_TIME_OUT_DEFAULT,SERVER_EXIT_TIME_OUT_AFTER_TASK_DONE_DEFAULT)
         }
         Some("stop") => {
             let stop_matched = matches.subcommand_matches("stop").unwrap();
