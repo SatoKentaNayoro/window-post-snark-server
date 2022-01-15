@@ -3,6 +3,7 @@
 ## What is window-post-snark-server？
 window-post-snark-server is the program used to perform Snark Proof tasks in Filecoin.
 It's kind of distributed，and supports multiple Miners sharing a set of servers.
+If you have many partitions in one deadline, you can use this to distribute tasks to multiple servers at the same time,that maybe can take the pressure off the Miner.
 
 ## WARNING
 - window-post-snark-server is currently only tested on MacOS and Ubuntu.
