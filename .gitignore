@@ -1,3 +1,5 @@
 /target
 .idea
 *.iml
+.DS_Store
+src/snark_proof_grpc.rs
