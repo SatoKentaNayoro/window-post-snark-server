@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "filecoin-hashers"
-version = "5.1.0"
+version = "6.0.2"
 dependencies = [
  "anyhow",
  "bellperson",
@@ -603,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "filecoin-proofs"
-version = "10.1.0"
+version = "11.0.2"
 dependencies = [
  "anyhow",
  "bellperson",
@@ -636,6 +636,7 @@ dependencies = [
  "storage-proofs-core",
  "storage-proofs-porep",
  "storage-proofs-post",
+ "storage-proofs-update",
  "typenum",
 ]
 
@@ -675,7 +676,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "fr32"
-version = "3.1.0"
+version = "4.0.2"
 dependencies = [
  "anyhow",
  "bellperson",
@@ -1753,7 +1754,7 @@ dependencies = [
 
 [[package]]
 name = "sha2raw"
-version = "5.1.0"
+version = "6.0.2"
 dependencies = [
  "block-buffer",
  "byteorder 1.4.3",
@@ -1823,7 +1824,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "storage-proofs-core"
-version = "10.1.0"
+version = "11.0.2"
 dependencies = [
  "aes",
  "anyhow",
@@ -1862,7 +1863,7 @@ dependencies = [
 
 [[package]]
 name = "storage-proofs-porep"
-version = "10.1.0"
+version = "11.0.2"
 dependencies = [
  "anyhow",
  "bellperson",
@@ -1902,7 +1903,7 @@ dependencies = [
 
 [[package]]
 name = "storage-proofs-post"
-version = "10.1.0"
+version = "11.0.2"
 dependencies = [
  "anyhow",
  "bellperson",
@@ -1925,6 +1926,47 @@ dependencies = [
  "serde",
  "sha2",
  "storage-proofs-core",
+]
+
+[[package]]
+name = "storage-proofs-update"
+version = "11.0.2"
+dependencies = [
+ "anyhow",
+ "bellperson",
+ "bincode",
+ "blstrs",
+ "byte-slice-cast",
+ "byteorder 1.4.3",
+ "crossbeam",
+ "digest",
+ "fdlimit",
+ "ff",
+ "fil_logger",
+ "filecoin-hashers",
+ "fr32",
+ "generic-array",
+ "hex",
+ "lazy_static",
+ "libc",
+ "log",
+ "mapr",
+ "memmap",
+ "merkletree",
+ "neptune",
+ "num-bigint",
+ "num-traits",
+ "num_cpus",
+ "pretty_assertions",
+ "rand 0.8.4",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sha2raw",
+ "storage-proofs-core",
+ "storage-proofs-porep",
+ "yastl",
 ]
 
 [[package]]
@@ -2379,7 +2421,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "window-post-snark-server"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bellperson",
